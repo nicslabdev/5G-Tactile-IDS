@@ -1,0 +1,5 @@
+import suodfile
+
+if __name__ == "__main__":
+    print("AAAAAAAAAAAAAAAAAAAAAAAAA BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB CCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
+    suodfile.run()

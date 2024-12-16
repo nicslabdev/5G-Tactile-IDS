@@ -1,0 +1,32 @@
+import random
+from matplotlib import pyplot as plt
+from pyod.models.iforest import IForest
+from pyod.utils.data import evaluate_print
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+# suppress warnings
+import warnings
+
+warnings.filterwarnings("ignore")
+
+def confusion_matrix_plot(y_test, predicted_labels):
+    cm = confusion_matrix(y_test, predicted_labels)
+
+    # Plot confusion matrix as heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=['Negative', 'Positive'], 
+                yticklabels=['Negative', 'Positive'])
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.title(f'Confusion Matrix')
+    plt.show()
+    plt.savefig('tmp-delete')
+
+def run(X, Y):
+    # clf = IForest()
+    # clf.fit(X)
+    # evaluate_print('IForest', Y, clf.predict(X))
+    # confusion_matrix_plot(Y, clf.predict(X))
+    return random.randint(0, 100)

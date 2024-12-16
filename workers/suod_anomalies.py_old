@@ -1,0 +1,80 @@
+import math
+import os
+import random
+import sys
+from matplotlib import pyplot as plt
+import pandas as pd
+
+import scipy as sp
+from sklearn.metrics import confusion_matrix, f1_score
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
+from pyod.models.iforest import IForest
+from pyod.models.lof import LOF
+from pyod.utils.data import evaluate_print
+
+from combo.models.score_comb import majority_vote, maximization, average
+import seaborn as sns
+
+# suppress warnings
+import warnings
+
+warnings.filterwarnings("ignore")
+
+# temporary solution for relative imports in case combo is not installed
+# if combo is installed, no need to use the following line
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname("__file__"), '..')))
+
+from suod.models.base import SUOD
+from suod.utils.utility import get_estimators_small
+
+def run(X, Y):
+    # standardize data to be digestible for most algorithms
+    X = StandardScaler().fit_transform(X)
+
+    X_train, X_test, y_train, y_test = \
+        train_test_split(X, Y, test_size=0.4, random_state=42)
+
+    contamination = Y.sum() / len(Y) if Y.sum() / len(Y) != 0 else 0.1
+    print('contamination',contamination)
+    base_estimators = get_estimators_small(contamination)
+
+    model = SUOD(base_estimators=base_estimators, n_jobs=-1, bps_flag=True,
+                 contamination=contamination, approx_flag_global=True)
+
+    model.fit(X)  # fit all models with X
+    model.approximate(X)  # conduct model approximation if it is enabled
+    predicted_labels = model.predict(X)  # predict labels
+    predicted_scores = model.decision_function(X)  # predict scores
+    predicted_probs = model.predict_proba(X)  # predict scores
+
+    cm = confusion_matrix(Y, majority_vote(predicted_labels))
+
+    # Plot confusion matrix as heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=['Negative', 'Positive'], 
+                yticklabels=['Negative', 'Positive'])
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.title(f'Confusion Matrix')
+    plt.show()
+    plt.savefig('suod')
+
+    ###########################################################################
+    # compared with other approaches
+    evaluate_print('majority vote', Y, majority_vote(predicted_labels))
+    evaluate_print('average', Y, average(predicted_scores))
+    evaluate_print('maximization', Y, maximization(predicted_scores))
+
+    # clf = LOF()
+    # clf.fit(X_train)
+    # evaluate_print('LOF', y_test, clf.decision_function(X_test))
+
+    # clf = IForest()
+    # clf.fit(X_train)
+    # evaluate_print('IForest', y_test, clf.decision_function(X_test))
+    return majority_vote(predicted_labels)
